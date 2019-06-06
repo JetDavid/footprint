@@ -18,6 +18,10 @@
 git clone https://github.com/brendangregg/FlameGraph.git
 perf record -F 99 -p ${1} -g -- sleep 30
 perf script | FlameGraph/stackcollapse-perf.pl | FlameGraph/flamegraph.pl > ${1}.svg
+
+# analyze the 
+perf report --sort=dso
+perf report
 ```
 
 ## Reference
