@@ -1,4 +1,4 @@
-# NVME-Cli
+# NVME Namespace Management
 
 ## Namespace Rescan
 
