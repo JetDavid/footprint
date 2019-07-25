@@ -107,6 +107,7 @@ grantpt (int fd)
 >
 > - [kernel/filesystem - devpts](https://www.kernel.org/doc/Documentation/filesystems/devpts.txt)
 > - [Container Specification - v1](https://github.com/opencontainers/runc/blob/master/libcontainer/SPEC.md)
+> - [Failed to create a PTY. Operation not permitted on CentOS7 #462](https://github.com/dw/mitogen/issues/462)
 
 > 扩展阅读:
 >
