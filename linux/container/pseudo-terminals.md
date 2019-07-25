@@ -15,14 +15,14 @@ A pseudoterminal (sometimes abbreviated "pty") is a pair of virtual character de
 
 - 存在2种为终端标准: BSD and System V. SUSv1 standardized a pseudoterminal API based on the System V API, and this API should be employed in all new programs that use pseudoterminals. linux2种方式均兼容。自2.6.4版本kernel之后，BSD-Style废弃，但可以在kernel中配置。现在更多应用采用的事UNIX 98方式（System V）
 
-本节参考：
+> 本节参考：
+>
+> - [pty(7) - Linux man page](https://linux.die.net/man/7/pty)
+> - [Using pseudo-terminals (pty) to control interactive programs](http://rachid.koucha.free.fr/tech_corner/pty_pdip.html)
 
-- [pty(7) - Linux man page](https://linux.die.net/man/7/pty)
-- [Using pseudo-terminals (pty) to control interactive programs](http://rachid.koucha.free.fr/tech_corner/pty_pdip.html)
-
-扩展阅读:
-
-[The TTY demystified](http://www.linusakesson.net/programming/tty/index.php)
+> 扩展阅读:
+>
+> [The TTY demystified](http://www.linusakesson.net/programming/tty/index.php)
 
 ## API for pseudo-termimals
 
@@ -80,7 +80,7 @@ grantpt (int fd)
 
 - 在容器内部，程序是需要依托文件系统运行的
 - 不单单是image基于的文件系统，还包括：proc, tmpfs, devpts, mqueue, sys.
-- pseudo-terminal的运行以来devpts文件系统。
+- pseudo-terminal的运行依赖devpts文件系统。
 - 在容器构建时，runtime需要将必要的文件系统mount到容器namespace中。并且这些mount会随着容器的生命周期结束而自动umount（kernel会完成这个事情）。
 
 ### Mount devpts filesystem
@@ -109,5 +109,5 @@ grantpt (int fd)
 > - [Container Specification - v1](https://github.com/opencontainers/runc/blob/master/libcontainer/SPEC.md)
 
 > 扩展阅读:
-> 
+>
 > - [Containers, pseudo TTYs, and backward compatibility](https://lwn.net/Articles/688809/)
