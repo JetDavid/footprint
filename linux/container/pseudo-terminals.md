@@ -104,5 +104,10 @@ grantpt (int fd)
 已知问题： 如果在mount devpts到namespace中时，没有对pty ownership授予gid=5。会引发当新建pty伪终端，grantpt()失败，提示Failed to change pseudo terminal's permission: Operation not permitted
 
 > 本节参考：
+>
 > - [kernel/filesystem - devpts](https://www.kernel.org/doc/Documentation/filesystems/devpts.txt)
 > - [Container Specification - v1](https://github.com/opencontainers/runc/blob/master/libcontainer/SPEC.md)
+
+> 扩展阅读:
+> 
+> - [Containers, pseudo TTYs, and backward compatibility](https://lwn.net/Articles/688809/)
