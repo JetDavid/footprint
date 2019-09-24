@@ -96,7 +96,14 @@ VFS | 不是 | 不支持 | 2.4 | 支持 | 不推荐 | 很慢 | 大
 
 ## 6. Conclusion
 
-overlay2 FS是docker官方推荐
+overlay2 FS是docker官方推荐，但有诸多限制：
+
+- 需要注意在更高版本的kernel上使用overlayFS. kernel >= 4.0 or CentOS(RHEL) kernel >= 3.10.0-514
+- 需要注意XFS必须带有d_type=true来使用，ext4已经默认配置
+- 需要注意overlayFS 对 POSIX standard支持不够充分。
+- 建议在container host上enforce SELinux功能。但目前经验来看，不开启未发生问题。
+- 建议XFS作为lower layer来使用。该部分需要测试
+- 建议关键数据不要再COW layer（各种graph driver）上试图保存，而是单独使用额外数据卷来做持久化。
 
 ## Reference
 
