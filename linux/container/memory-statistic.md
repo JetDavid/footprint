@@ -4,14 +4,6 @@
 
 容器的内存使用统计情况需要基于cgroup提供的系统接口memory.stat来实现。但memory.stat中呈现的内存参数表达的过于复杂，且和常规free指令或/proc/meminfo呈现的指标出入很大。因此需要一个统一的度量依据来确定内存实际使用情况。
 
-- 问题1： 常规计算memory的依据是cache+buff+free 但 cgroup中只有cache且cache的组成是否和meminfo中解释的一致？
-  - 子问题1： 查找meminfo中cache概念和组成，buff的概念
-  - 子问题2： 查找cgroup cache的概念和组成是否和meminfo中的一致？(redhat指出cgroup cache仅仅是active and inactive file and tmpfs(shmem)是否意味着不包括在tmpfs下创建的file)
-  - 子问题3： 假设buff+cache+free这种算法是公认的标准，那么cgroup memory如何计算
-- 问题2： 如何计算精准的memory usage。 available memory的算法是否合理？
-  - 子问题1： zoneinfo中的water level是什么意思，和available什么关系？
-- 问题3： 基于问题1和2，是否可以推导出cgroup memory中新的公式？
-
 ## 2 Investigation of Memory usage
 
 通常来讲，可用内存（available）会包含free+cache+buffer。正如redhat对free，meminfo的如下定义。包括AWS的内存采集也是如此。[1]
@@ -119,6 +111,20 @@ lwn.net在*reconsidering swapping* [4] 一文中阐述anonymous page也可以被
 
 ### 3.2 Cgroup memory stat
 
+首先，在cgroup memory子系统下，有默认的统计使用率接口。可以执行
+
+```bash
+cat /sys/fs/cgroup/memory/<cgroup_name>/memory.usage_in_bytes
+```
+
+但是在kernel.org中有所阐述，这个统计是不合理的（基于充分利用资源和性能角度而言）.因此我们需要根据memory.stat进一步分析
+
+原文摘录：
+
+> 5.5 usage_in_bytes
+>
+> For efficiency, as other kernel components, memory cgroup uses some optimization to avoid unnecessary cacheline false sharing. usage_in_bytes is affected by the method and doesn't show 'exact' value of memory (and swap) usage, it's a fuzz value for efficient access. (Of course, when necessary, it's synchronized.) If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP) value in memory.stat(see 5.2).
+
 通过redhat介绍，每个cgroup会有自己的usage统计。如下表内容。
 
 Statistic | Description
@@ -161,7 +167,11 @@ Cgroup memory可用的最终公式：
 
 memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 
-## 4 Conclusion
+## 4 The Approach of Dockerd
+
+
+
+## 5 Conclusion
 
 - page cache(active_list和inactive_list)， buffer都会被回收。这取决于kernel内部的算法。
 - 这部分被回收的内存算作可利用内存的一部分。
@@ -175,3 +185,10 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 3. [Chapter 10  Page Frame Reclamation - 10.2.3  Adding Pages to the Page Cache](https://www.kernel.org/doc/gorman/html/understand/understand013.html)
 4. [Reconsidering swapping](https://lwn.net/Articles/690079/)
 5. [Buffer Definition](http://www.linfo.org/buffer.html)
+6. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
+
+其他可以加强对memory使用率统计的理解文章：
+
+- [Low On Memory](https://linux-mm.org/Low_On_Memory)
+- [What do the “buff/cache” and “avail mem” fields in top mean?](https://unix.stackexchange.com/questions/390518/what-do-the-buff-cache-and-avail-mem-fields-in-top-mean)
+- [How can I get the amount of available memory portably across distributions?](https://unix.stackexchange.com/questions/261247/how-can-i-get-the-amount-of-available-memory-portably-across-distributions) 本文介绍了available memory的计算方法，事实上再一次说明内存使用率是无法精确计算的
