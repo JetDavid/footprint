@@ -121,11 +121,11 @@ cat /sys/fs/cgroup/memory/<cgroup_name>/memory.usage_in_bytes
 
 原文摘录：
 
-> 5.5 usage_in_bytes[7]
+> 5.5 usage_in_bytes[6]
 >
 > For efficiency, as other kernel components, memory cgroup uses some optimization to avoid unnecessary cacheline false sharing. usage_in_bytes is affected by the method and doesn't show 'exact' value of memory (and swap) usage, it's a fuzz value for efficient access. (Of course, when necessary, it's synchronized.) If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP) value in memory.stat(see 5.2).
 
-通过redhat介绍，每个cgroup会有自己的usage统计。如下表内容。
+通过redhat介绍，每个cgroup会有自己的usage统计。如下表内容[7]。
 
 Statistic | Description
 ----------|--------------
@@ -185,8 +185,8 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 3. [Chapter 10  Page Frame Reclamation - 10.2.3  Adding Pages to the Page Cache](https://www.kernel.org/doc/gorman/html/understand/understand013.html)
 4. [Reconsidering swapping](https://lwn.net/Articles/690079/)
 5. [Buffer Definition](http://www.linfo.org/buffer.html)
-6. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
-7. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
+6. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
+7. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
 
 其他可以加强对memory使用率统计的理解文章：
 
