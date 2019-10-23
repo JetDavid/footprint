@@ -121,7 +121,7 @@ cat /sys/fs/cgroup/memory/<cgroup_name>/memory.usage_in_bytes
 
 原文摘录：
 
-> 5.5 usage_in_bytes
+> 5.5 usage_in_bytes[7]
 >
 > For efficiency, as other kernel components, memory cgroup uses some optimization to avoid unnecessary cacheline false sharing. usage_in_bytes is affected by the method and doesn't show 'exact' value of memory (and swap) usage, it's a fuzz value for efficient access. (Of course, when necessary, it's synchronized.) If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP) value in memory.stat(see 5.2).
 
@@ -186,9 +186,11 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 4. [Reconsidering swapping](https://lwn.net/Articles/690079/)
 5. [Buffer Definition](http://www.linfo.org/buffer.html)
 6. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
+7. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
 
 其他可以加强对memory使用率统计的理解文章：
 
 - [Low On Memory](https://linux-mm.org/Low_On_Memory)
+- [What page replacement algorithms are used in Linux kernel for OS file cache?](https://unix.stackexchange.com/questions/281974/what-page-replacement-algorithms-are-used-in-linux-kernel-for-os-file-cache/282008)
 - [What do the “buff/cache” and “avail mem” fields in top mean?](https://unix.stackexchange.com/questions/390518/what-do-the-buff-cache-and-avail-mem-fields-in-top-mean)
 - [How can I get the amount of available memory portably across distributions?](https://unix.stackexchange.com/questions/261247/how-can-i-get-the-amount-of-available-memory-portably-across-distributions) 本文介绍了available memory的计算方法，事实上再一次说明内存使用率是无法精确计算的
