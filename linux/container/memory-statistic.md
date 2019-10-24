@@ -54,7 +54,7 @@ ECS: memory.usage = 100 * (memory.usage_in_bytes - memory.stat.cache) / memory.l
 
 简而言之，cache（又名page cache）大部分用于读设备数据缓存，提高性能。联系reclaim，最终page cache会被归类为LRU中的2种数据结构，active_list 和 inactive_list。
 
-通过原文描述可知，将page加入到page cache时一并会将其加入到 LRU 的 active_list 和 inactive_list 中。而reclaimation操作将在inactive_list中执行。 那么为什么内存使用率统计会将所有的page cache计入可利用范围内？
+通过原文描述可知，将page加入到page cache时一并会将其加入到 LRU 的 active_list 和 inactive_list 中。当内存不够时，reclaimation操作将在inactive_list中执行，从而腾挪出更多内存供其他进程使用。 由于active_list并不是被reclaimation直接回收的，那么为什么内存使用率统计会将所有的page cache计入可利用范围内？ 请继续3.1小节的分析。
 
 原文摘录：
 
