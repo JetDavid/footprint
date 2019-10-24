@@ -182,7 +182,7 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 
 1. [Interpreting /proc/meminfo and free output for Red Hat Enterprise Linux 5, 6 and 7](https://access.redhat.com/solutions/406773)
 2. [RHEL 6 – Controlling Cache Memory / Page Cache Size](http://unixadminschool.com/blog/2013/10/rhel-6-controlling-cache-memory-page-cache-size/)
-3. [Chapter 10  Page Frame Reclamation - 10.2.3  Adding Pages to the Page Cache](https://www.kernel.org/doc/gorman/html/understand/understand013.html)
+3. [Chapter 10  Page Frame Reclamation](https://www.kernel.org/doc/gorman/html/understand/understand013.html)
 4. [Reconsidering swapping](https://lwn.net/Articles/690079/)
 5. [Buffer Definition](http://www.linfo.org/buffer.html)
 6. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
