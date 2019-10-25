@@ -52,17 +52,20 @@ ECS: memory.usage = 100 * (memory.usage_in_bytes - memory.stat.cache) / memory.l
 
 ## 3 What is Page Cache, Buffer and How was them reclaimed
 
-简而言之，cache（又名page cache）大部分用于读设备数据缓存，提高性能。联系reclaim，最终page cache会被归类为LRU中的2种数据结构，active_list 和 inactive_list。
+简而言之，cache（又名page cache）大部分用于读设备数据缓存，提高性能。联系reclaim，最终page cache会被归类为LRU (Least Recently Used) 中的2种数据结构，active_list 和 inactive_list。
 
 通过原文描述可知，将page加入到page cache时一并会将其加入到 LRU 的 active_list 和 inactive_list 中。当内存不够时，reclaimation操作将在inactive_list中执行，从而腾挪出更多内存供其他进程使用。 由于active_list并不是被reclaimation直接回收的，那么为什么内存使用率统计会将所有的page cache计入可利用范围内？ 请继续3.1小节的分析。
 
-原文摘录：
+以下内容摘录自：
 
-> What is page cache?[2]
+- 参考文章[2]中 What is page cache小节
+- 参考文章[3]中 10.2 Page cache, 10.3 LRU Lists小节
+
+> What is page cache?
 >
 > When a user process reads or writes a file, it is actually modifying a copy of that file in main memory. The kernel creates that copy from the disk and writes back changes to it when necessary. The memory taken up by these copies is called cached memory, in other words we call it as page cache.
 >
-> 10.2 Page cache[3]
+> 10.2 Page cache
 >
 > Pages read from a file or block device are generally added to the page cache to avoid further disk IO.
 >
@@ -73,7 +76,7 @@ ECS: memory.usage = 100 * (memory.usage_in_bytes - memory.stat.cache) / memory.l
 > - Anonymous pages exist in a special aspect of the page cache called the swap cache when slots are allocated in the backing storage for page-out, discussed further in Chapter 11;
 > - **Pages belonging to shared memory regions are treated in a similar fashion to anonymous pages**. The only difference is that shared pages are added to the swap cache and space reserved in backing storage immediately after the first write to the page.
 >
-> 10.3  LRU Lists[3]
+> 10.3  LRU Lists
 >
 > As stated in Section 10.1, **the LRU lists consist of two lists called active_list and inactive_list.** They are declared in mm/page_alloc.c and are protected by the pagemap_lru_lock spinlock. They, broadly speaking, store the “hot” and “cold” pages respectively, or in other words, **the active_list contains all the working sets in the system and inactive_list contains reclaim canditates.**
 >
@@ -83,14 +86,18 @@ ECS: memory.usage = 100 * (memory.usage_in_bytes - memory.stat.cache) / memory.l
 
 对于Buffer memory而言，有如下描述：
 
-简而言之，buffer用于写设备数据缓冲。一般很小。reclaim时会将dirty page写入设备。kernel会等待IO结束后，将page回收。
+简而言之，buffer用于写设备数据缓冲。一般很小。reclaim会在系统内存紧缺时将buff回收。
 
-原文摘录：
+以下内容摘录自：
+
+- 参考文章[5]
+- 参考文章[6]中，5.15 Improved Memory Reclamation Policy小节
 
 > A buffer, also called buffer memory, is a portion of a computer's memory that is set aside as a temporary holding place for data that is being sent to or received from an external device, such as a hard disk drive (HDD), keyboard or printer.
-> The original meaning of buffer is a cushion-like device that reduces the shock from the contact of two objects. A buffer in a computer system is usually located between two devices that have different speeds for handling data or used when there is a difference in the timing of events. It is analogous to a reservoir, which captures water upstream and then lets it out at controlled speeds intended to prevent the lower river from overflowing its banks. Likewise, a buffer in a computer ensures that data has somewhere to go, i.e., into the buffer temporarily until its ultimate destination becomes available.[5]
-
-> reclaim buffer的原理来自文章[3]中小节： *10.3.2  Reclaiming Pages from the LRU Lists*
+> The original meaning of buffer is a cushion-like device that reduces the shock from the contact of two objects. A buffer in a computer system is usually located between two devices that have different speeds for handling data or used when there is a difference in the timing of events. It is analogous to a reservoir, which captures water upstream and then lets it out at controlled speeds intended to prevent the lower river from overflowing its banks. Likewise, a buffer in a computer ensures that data has somewhere to go, i.e., into the buffer temporarily until its ultimate destination becomes available.
+>
+> 5.15    Improved Memory Reclamation Policy
+The memory reclamation policy was enhanced in Digital UNIX Version 4.0 to improve system performance. In previous releases of the operating system, once the system began running out of physical memory, global paging would begin to reclaim memory, attempting to select pages fairly between the Unified Buffer Cache (UBC) and VM.
 
 ### 3.1 Shrink all caches
 
@@ -103,7 +110,7 @@ kernel.org描述中带有很多函数说明，但这不妨碍我们分析shrink 
 
 请参看[3]中章节： *10.3  LRU Lists*下对 *refilling， reclaim pages, shrink all caches*的全面描述
 
-lwn.net在*reconsidering swapping* [4] 一文中阐述anonymous page也可以被reclaimed，只是代价较大。因此引入一个问题： 如果将anonymous page也计入可用内存的统计当中，那么岂不是更多的内存都可以使用。 但这里需要反思的是，可用内存的统计需要有一个承诺前提，那就是——性能，基于性能来表达使用率。而对于reclaiming anonymous page而言，会有性能代价。*reconsidering swapping*一文中解释了reclaiming anonymous page的代价：
+lwn.net在*reconsidering swapping* [4] 一文中阐述anonymous page也可以被reclaimed，只是代价较大。因此引入一个问题： 如果将anonymous page也计入可用内存的统计当中，那么岂不是更多的内存都可以使用。 但这里需要反思的是，可用内存的统计需要有一个承诺前提，那就是——“性能”，基于性能来表达使用率。而对于reclaiming anonymous page而言，会有性能代价。*reconsidering swapping*一文中解释了reclaiming anonymous page的代价：
 
 - 需要将anonymous page写入swap cache，才算reclaim。
 - 这一行为和page cache相比，性能会差很多。因为page cache大部分都是整个文件，有连续的地址空间，对于磁盘而言顺序写和读是更快的。而anonymous page则是分散的，写入磁盘是随机的
@@ -121,11 +128,11 @@ cat /sys/fs/cgroup/memory/<cgroup_name>/memory.usage_in_bytes
 
 原文摘录：
 
-> 5.5 usage_in_bytes[6]
+> 5.5 usage_in_bytes[7]
 >
 > For efficiency, as other kernel components, memory cgroup uses some optimization to avoid unnecessary cacheline false sharing. usage_in_bytes is affected by the method and doesn't show 'exact' value of memory (and swap) usage, it's a fuzz value for efficient access. (Of course, when necessary, it's synchronized.) If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP) value in memory.stat(see 5.2).
 
-通过redhat介绍，每个cgroup会有自己的usage统计。如下表内容[7]。
+通过redhat介绍，每个cgroup会有自己的usage统计。如下表内容[8]。
 
 Statistic | Description
 ----------|--------------
@@ -163,13 +170,25 @@ Therefore, active_anon + inactive_anon ≠ rss, because rss does not include tmp
 
 stackoverflow也有相关回答[How is memory corruption handled by Linux when the process terminates?](https://unix.stackexchange.com/questions/370338/how-is-memory-corruption-handled-by-linux-when-the-process-terminates)
 
-Cgroup memory可用的最终公式：
+**Cgroup memory可用的最终公式：**
 
 memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 
+事实上当没有swap交换时，该公式可以为memory usage in cgroup = memory.stat.mapped_file + memory.stat.rss
+
+但是rss中包含了swap cache大小。
+
+### 3.4 Memory Pressure
+
+当然在内存压力过大时，也会产生特别现象：
+
+- anonymous page会被回收至swap cache（前面已经提到）
+- 压力过大时，share memory将不会计入cgroup统计(摘自[7]2.3 Shared Page Accounting小节)
+- memory pressure是有级别的，medium级别一般会回收page cache， low级别会保证一定的cache level， 到达critical时，需要采取立即行动来尽量避免OOM。
+
+参考内容来自[7]中 11. Memory Pressure小节
+
 ## 4 The Approach of Dockerd
-
-
 
 ## 5 Conclusion
 
@@ -185,8 +204,9 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 3. [Chapter 10  Page Frame Reclamation](https://www.kernel.org/doc/gorman/html/understand/understand013.html)
 4. [Reconsidering swapping](https://lwn.net/Articles/690079/)
 5. [Buffer Definition](http://www.linfo.org/buffer.html)
-6. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
-7. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
+6. [5 Virtual Memory](https://www3.physnet.uni-hamburg.de/physnet/Tru64-Unix/HTML/AQTLLATE/DOCU_012.HTM)
+7. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
+8. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
 
 其他可以加强对memory使用率统计的理解文章：
 
@@ -194,3 +214,4 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 - [What page replacement algorithms are used in Linux kernel for OS file cache?](https://unix.stackexchange.com/questions/281974/what-page-replacement-algorithms-are-used-in-linux-kernel-for-os-file-cache/282008)
 - [What do the “buff/cache” and “avail mem” fields in top mean?](https://unix.stackexchange.com/questions/390518/what-do-the-buff-cache-and-avail-mem-fields-in-top-mean)
 - [How can I get the amount of available memory portably across distributions?](https://unix.stackexchange.com/questions/261247/how-can-i-get-the-amount-of-available-memory-portably-across-distributions) 本文介绍了available memory的计算方法，事实上再一次说明内存使用率是无法精确计算的
+- [cgroup memory usage statistic](https://hustcat.github.io/cgroup-memory-statistic-again/)
