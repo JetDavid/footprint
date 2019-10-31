@@ -188,16 +188,48 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 
 参考内容来自[7]中 11. Memory Pressure小节
 
-## 4 The Approach of Dockerd
+## 4 Out Of Memory
+
+当系统内存不足时，新发生的内存申请，会触发系统OOM机制。系统会选择合适的进程来决定是否需要将其kill。以下几个条件会作为oom的先决条件：
+
+- Is there enough swap space left (nr_swap_pages > 0) ? If yes, not OOM
+- Has it been more than 5 seconds since the last failure? If yes, not OOM
+- Have we failed within the last second? If no, not OOM
+- If there hasn't been 10 failures at least in the last 5 seconds, we're not OOM
+- Has a process been killed within the last 5 seconds? If yes, not OOM
+
+当满足以上条件后，kernel会决定一个合适进程然后kill掉。决定因素是计分制。算法如下：
+
+badness_for_task = total_vm_for_task / (sqrt(cpu_time_in_seconds) * sqrt(sqrt(cpu_time_in_minutes)))
+
+目的就是选择一个短时间运行的进程，却在大量申请内存。如原文所述[9]. 另外，对于根进程，拥有CAP_SYS_ADMIN，或CAP_SYS_RAWIO的进程，这个分数会除以4。
+
+> This has been chosen to select a process that is using a large amount of memory but is not that long lived. Processes which have been running a long time are unlikely to be the cause of memory shortage so this calculation is likely to select a process that uses a lot of memory but has not been running long. If the process is a root process or has CAP_SYS_ADMIN capabilities, the points are divided by four as it is assumed that root privilege processes are well behaved. Similarly, if it has CAP_SYS_RAWIO capabilities (access to raw devices) privileges, the points are further divided by 4 as it is undesirable to kill a process that has direct access to hardware.
+
+为了避免进程被kill, 我们的内存统计算法也需要增加一个先决条件： 内存监控能够帮助预警OOM的事情发生。那么在OOM之前，还有哪些内存可以被回收，而不必触发OOM ？
+
+> When checking available memory, the number of required pages is passed as a parameter to vm_enough_memory(). Unless the system administrator has specified that the system should overcommit memory, the mount of available memory will be checked. To determine how many pages are potentially available, Linux sums up the following bits of data:
+>
+> - Total page cache as page cache is easily reclaimed
+> - Total free pages because they are already available
+> - Total free swap pages as userspace pages may be paged out
+> - Total pages managed by swapper_space although this double-counts the free swap pages. This is balanced by the fact that slots are sometimes reserved but not used
+> - Total pages used by the dentry cache as they are easily reclaimed
+> - Total pages used by the inode cache as they are easily reclaimed
+
+但需要注意前面触发oom_Killer的先决条件，会有申请不到内存的时候。也就是即便有reclaim机制，也可能回收不及时导致最后oom。所以回想内存统计的公认算法。并没有将anonymous page（reclaim时会交换到swap cache中）作为可用内存一部分。因此，结论会比较明确：**基于性能和业务可靠性下的内存统计和预警，一方面可用内存必须有cache buff free。另外一方面必须有阈值告警，在内存未达到最高峰前做必要扩容或分摊压力处理。**
 
 ## 5 Conclusion
 
+对于内存统计而言：
+
 - page cache(active_list和inactive_list)， buffer都会被回收。这取决于kernel内部的算法。
 - 这部分被回收的内存算作可利用内存的一部分。
-- 假设上面提到的内存统计是“公认的内存可用统计”。意味着在性能一定的前提下，anonymous page不能被回收，应该算作已使用内存
-- cgroup中cache 的组成（active_file和inactive_file）说明了这部分是可以回收的。但基于“保证性能”的前提下，share memory应该排除在外
+- 假设上面提到的内存统计是“公认的内存可用统计”。意味着在性能一定的前提下，anonymous page不能被回收，应该算作已使用内存。
+- cgroup中cache 的部分组成（active_file和inactive_file）说明了这部分是可以回收的。但基于“保证性能”的前提下，share memory应该排除在外（share memory reclaim时会被swap cache接收）
+- 鉴于OOM的出现，我们需要做必要的预警来保证业务平稳运行（如果回收内存不及时会导致oom）
 
-## 5 Reference
+## 6 Reference
 
 1. [Interpreting /proc/meminfo and free output for Red Hat Enterprise Linux 5, 6 and 7](https://access.redhat.com/solutions/406773)
 2. [RHEL 6 – Controlling Cache Memory / Page Cache Size](http://unixadminschool.com/blog/2013/10/rhel-6-controlling-cache-memory-page-cache-size/)
@@ -207,6 +239,7 @@ memory usage in cgroup = memory.usage_in_bytes - (active_file + inactive_file)
 6. [5 Virtual Memory](https://www3.physnet.uni-hamburg.de/physnet/Tru64-Unix/HTML/AQTLLATE/DOCU_012.HTM)
 7. [Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
 8. [Cgroup subsystem -- 3.7. MEMORY](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/resource_management_guide/sec-memory)
+9. [Chapter 13  Out Of Memory Management](https://www.kernel.org/doc/gorman/html/understand/understand016.html)
 
 其他可以加强对memory使用率统计的理解文章：
 
