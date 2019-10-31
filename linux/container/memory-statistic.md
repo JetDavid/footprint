@@ -86,7 +86,7 @@ ECS: memory.usage = 100 * (memory.usage_in_bytes - memory.stat.cache) / memory.l
 
 对于Buffer memory而言，有如下描述：
 
-简而言之，buffer用于写设备数据缓冲。一般很小。reclaim会在系统内存紧缺时将buff回收。
+简而言之，buffer用于写设备数据缓冲。一般很小。但和page cache的区别在于buff是对设备的缓冲。page cache是对文件的缓存。reclaim会在系统内存紧缺时将buff回收。
 
 以下内容摘录自：
 
