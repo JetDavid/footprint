@@ -9,7 +9,7 @@
 
 ## Host-GW
 
-![host-gw-topology](images/flannel-host-gw.png)
+![host-gw-topology](./images/flannel-host-gw.png)
 
 在每个node上配置到其他node 中pod subnet的子网路由，下一条指向对端的主网卡ip，从本地主网卡设备出去。
 
@@ -22,7 +22,7 @@ default via 192.168.0.254 dev eth0 proto static metric 100
 
 ## vxlan 网络
 
-![vxlan-topology](images/flannel-vxlan.png)
+![vxlan-topology](./images/flannel-vxlan.png)
 
 各个node上的网络设备列表新增一个名为flannel.1的类型为vxlan的网络设备, 从flannel.1的设备信息来看，它似乎与eth0存在着某种bind关系。这是在其他bridge、veth设备描述信息中所没有的。
 

@@ -2,7 +2,7 @@
 
 ## 控制面架构及组件
 
-![calico-components](images/calico-component.jpg)
+![calico-components](./images/calico-component.jpg)
 
 - Felix, 负责在node上完成网络路由，ACL以及其他需要在node上执行的任务；基于不同的编排环境，主要负责：interface管理，Route管理，ACL，状态上报（网络状态上报到etcd）
 - The Orchestrator plugin, 与编排系统紧密结合的一段代码，例如：Calico Neutron ML2 mechanism driver. 可以利用Neutron ML2 API来配置调用calico的功能
