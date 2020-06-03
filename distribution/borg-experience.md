@@ -36,7 +36,7 @@
 
 <!-- /TOC -->
 
-> 以下内容均来自*Large-scale cluster management at Google with Borg*，通过阅读文章，总结和梳理了在面对大规模集群设计时所要考虑的方方面面。对充分理解kubernetes设计背景和当前主要开发和维护的IaaS云平台有很多借鉴意义。但在学习中也要注意Borg并不是面向IaaS平面的资源管理系统，需注意区分场景和需求的不同
+> 以下内容均来自*Large-scale cluster management at Google with Borg*和*Borg: the Next Generation*，通过阅读文章，总结和梳理borg在面对大规模集群设计时所要考虑的方方面面。对充分理解kubernetes设计背景和当前主要开发和维护的IaaS云平台有很多借鉴意义。但在学习中也要注意Borg并不是面向IaaS平面的资源管理系统，需注意区分场景和需求的不同。另外还需要配合参考*Omega*和*Autopilot*其他paper。
 
 ## 0 核心点写在前面
 
